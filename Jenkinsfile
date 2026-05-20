@@ -22,7 +22,7 @@ pipeline {
         stage('Deploy Frontend') {
             steps {
                 sh '''
-                scp -r frontend/* ec2-user13.220.42.209:/usr/share/nginx/html/
+                scp -r frontend/* ec2-user@13.220.42.209:/usr/share/nginx/html/
                 '''
             }
         }
