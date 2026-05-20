@@ -3,17 +3,12 @@ pipeline {
 
     stages {
 
-        stage('Clone Repository') {
-            steps {
-                echo 'Cloning Repository'
-            }
-        }
-
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
                     sh '''
-                    npm install
+                    npm ci
+                    npm run build
                     '''
                 }
             }
@@ -22,7 +17,7 @@ pipeline {
         stage('Deploy Frontend') {
             steps {
                 sh '''
-                scp -r frontend/* ec2-user@13.220.42.209:/usr/share/nginx/html/
+                scp -r frontend/build/* ec2-user@FRONTEND_PUBLIC_IP:/usr/share/nginx/html/
                 '''
             }
         }
@@ -30,13 +25,21 @@ pipeline {
         stage('Deploy Backend') {
             steps {
                 sh '''
-                ssh ec2-user@3.94.153.78 "
-                    rm -rf 3tier-app
-                    git clone https://github.com/chethanteja-kumar/3tier-app.git
-                    cd 3tier-app/backend
-                    npm install
-                    pkill node || true
-                    nohup node server.js > app.log 2>&1 &
+                ssh ec2-user@BACKEND_PUBLIC_IP "
+
+                    if [ ! -d 3tier-app ]; then
+                        git clone https://github.com/chethanteja-kumar/3tier-app.git
+                    fi
+
+                    cd 3tier-app
+
+                    git pull
+
+                    cd backend
+
+                    npm ci
+
+                    pm2 restart server || pm2 start server.js --name server
                 "
                 '''
             }
